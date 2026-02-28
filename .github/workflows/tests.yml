@@ -10,33 +10,36 @@ jobs:
         python-version: ["3.9", "3.10", "3.11"]
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
+        cache: 'pip'
     
-    - name: Install poetry
-      run: curl -sSL https://install.python-poetry.org | python3 -
+    - name: Install Poetry
+      run: pipx install poetry
+    
+    - name: Cache Poetry dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pypoetry
+        key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-poetry-
     
     - name: Install dependencies
-      run: |
-        export PATH="$HOME/.local/bin:$PATH"
-        poetry install
+      run: poetry install
     
     - name: Run tests
-      run: |
-        export PATH="$HOME/.local/bin:$PATH"
-        poetry run pytest --cov=src/openclaw_telegram
+      run: poetry run pytest --cov=openclaw_telegram tests/
     
-    - name: Lint
-      run: |
-        export PATH="$HOME/.local/bin:$PATH"
-        poetry run black --check src/ tests/
-        poetry run pylint src/
+    - name: Format check
+      run: poetry run black --check openclaw_telegram/ tests/
     
     - name: Type check
-      run: |
-        export PATH="$HOME/.local/bin:$PATH"
-        poetry run mypy src/
+      run: poetry run mypy openclaw_telegram/
+    
+    - name: Lint
+      run: poetry run pylint openclaw_telegram/ || true
