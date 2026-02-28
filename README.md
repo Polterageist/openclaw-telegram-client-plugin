@@ -79,6 +79,32 @@ async def main():
 asyncio.run(main())
 ```
 
+## Project Structure
+
+```
+openclaw-telegram-client-plugin/
+├── openclaw_telegram/           # Main module
+│   ├── __init__.py             # Exports: TelegramClient, Config, exceptions
+│   ├── client.py               # High-level API
+│   ├── tg_cli.py               # telegram-cli subprocess wrapper
+│   ├── config.py               # Configuration (no APP_ID needed!)
+│   ├── cli.py                  # Click CLI commands
+│   └── exceptions.py           # Custom exception types
+├── tests/                       # Pytest test suite (TDD)
+│   ├── conftest.py
+│   ├── test_client.py
+│   └── test_config.py
+├── examples/                    # Real usage examples
+│   └── basic_usage.py
+├── .github/workflows/           # CI/CD (GitHub Actions)
+├── pyproject.toml              # Poetry configuration
+├── README.md                   # This file
+├── QUICKSTART.md               # 5-minute setup guide
+├── CONTRIBUTING.md             # Development guidelines
+├── AGENTS.md                   # Agent behavior config
+└── LICENSE (MIT)
+```
+
 ## API Reference
 
 ### TelegramClient
@@ -131,23 +157,23 @@ LOG_LEVEL=INFO
 
 ```bash
 poetry run pytest
-poetry run pytest --cov=src/openclaw_telegram
+poetry run pytest --cov=openclaw_telegram
 ```
 
 ## Development
 
 ```bash
 # Format code
-poetry run black src/ tests/
+poetry run black openclaw_telegram/ tests/
 
 # Type check
-poetry run mypy src/
+poetry run mypy openclaw_telegram/
 
 # Lint
-poetry run pylint src/
+poetry run pylint openclaw_telegram/
 
 # All checks
-poetry run pytest && poetry run black --check src/ && poetry run mypy src/
+poetry run pytest && poetry run black --check . && poetry run mypy openclaw_telegram/
 ```
 
 ## Troubleshooting

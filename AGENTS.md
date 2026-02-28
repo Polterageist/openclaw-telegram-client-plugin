@@ -172,10 +172,10 @@ raise Exception("failed")
 
 ### Before PR
 ```bash
-poetry run pytest               # All tests pass
-poetry run black --check src/   # Formatted
-poetry run mypy src/            # Types ok
-poetry run pylint src/          # No critical issues
+poetry run pytest                          # All tests pass
+poetry run black --check openclaw_telegram/ tests/  # Formatted
+poetry run mypy openclaw_telegram/         # Types ok
+poetry run pylint openclaw_telegram/       # No critical issues
 ```
 
 ## constraints

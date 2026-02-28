@@ -5,7 +5,7 @@ description = "OpenClaw Telegram client plugin for user account operations (tele
 authors = ["Aleksandr <polterageist@example.com>"]
 readme = "README.md"
 license = "MIT"
-packages = [{include = "openclaw_telegram", from = "src"}]
+packages = [{include = "openclaw_telegram"}]
 
 [tool.poetry.dependencies]
 python = "^3.9"

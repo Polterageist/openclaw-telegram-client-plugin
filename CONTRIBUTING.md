@@ -32,12 +32,9 @@ poetry install
 ```bash
 # Run all checks
 poetry run pytest
-poetry run black src/ tests/
-poetry run pylint src/
-poetry run mypy src/
-
-# Or use script
-./scripts/check.sh
+poetry run black openclaw_telegram/ tests/
+poetry run pylint openclaw_telegram/
+poetry run mypy openclaw_telegram/
 ```
 
 ## Code Style
