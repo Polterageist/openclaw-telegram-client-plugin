@@ -14,13 +14,13 @@ logger = logging.getLogger(__name__)
 
 class TGCLIBackend(BaseBackend):
     """telegram-cli subprocess wrapper.
-    
+
     Default backend: safe, no APP_ID/HASH needed, user manages credentials locally.
     """
 
     def __init__(self, tg_cli_path: str = "tg", config_dir: str = "~/.telegram-cli"):
         """Initialize telegram-cli backend.
-        
+
         Args:
             tg_cli_path: Path to telegram-cli binary
             config_dir: Config directory for telegram-cli
@@ -32,7 +32,7 @@ class TGCLIBackend(BaseBackend):
 
     async def connect(self) -> bool:
         """Start telegram-cli subprocess.
-        
+
         Raises:
             ConnectionError: If telegram-cli not found or fails
         """
@@ -45,11 +45,11 @@ class TGCLIBackend(BaseBackend):
                 text=True,
                 bufsize=1,
             )
-            
+
             self._connected = True
             logger.info("Connected via telegram-cli")
             return True
-        
+
         except FileNotFoundError:
             logger.error(f"telegram-cli not found: {self.tg_cli_path}")
             raise TGConnectionError(
@@ -79,30 +79,27 @@ class TGCLIBackend(BaseBackend):
         """Run command in telegram-cli."""
         if not self._connected or not self._process:
             raise TGConnectionError("Not connected")
-        
+
         try:
-            stdout, stderr = self._process.communicate(
-                input=f"{command}\n",
-                timeout=10
-            )
-            
+            stdout, stderr = self._process.communicate(input=f"{command}\n", timeout=10)
+
             if stderr:
                 logger.debug(f"tg stderr: {stderr}")
-            
-            return stdout.strip()
-        
+
+            return str(stdout).strip() if stdout else ""
+
         except subprocess.TimeoutExpired:
             raise TGConnectionError("Command timeout")
 
     async def get_dialogs(self, limit: int = 50) -> List[Dict[str, Any]]:
         """Get dialogs via telegram-cli."""
         output = await self._run_command("dialog_list")
-        
+
         dialogs = []
         for line in output.split("\n")[:limit]:
             if line.strip():
                 dialogs.append({"title": line})
-        
+
         return dialogs
 
     async def get_messages(
@@ -112,26 +109,26 @@ class TGCLIBackend(BaseBackend):
     ) -> List[Dict[str, Any]]:
         """Get messages via telegram-cli."""
         output = await self._run_command(f"history {peer} {limit}")
-        
+
         messages = []
         for line in output.split("\n"):
             if line.strip():
                 messages.append({"text": line})
-        
+
         return messages
 
     async def send_message(self, peer: str, text: str) -> Dict[str, Any]:
         """Send message via telegram-cli."""
         try:
             output = await self._run_command(f'msg {peer} "{text}"')
-            
+
             return {
                 "peer": peer,
                 "text": text,
                 "sent": True,
                 "output": output,
             }
-        
+
         except Exception as e:
             logger.error(f"Failed to send message: {e}")
             raise MessageError(f"Failed to send: {e}")

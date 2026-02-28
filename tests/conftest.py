@@ -10,9 +10,9 @@ from openclaw_telegram.config import Config
 def mock_config():
     """Mock configuration."""
     config = Config()
-    config.api_id = 123456
-    config.api_hash = "test_hash"
-    config.phone_number = "+1234567890"
+    config.telethon_api_id = 123456
+    config.telethon_api_hash = "test_hash"
+    config.telethon_phone = "+1234567890"
     return config
 
 
@@ -23,9 +23,11 @@ def mock_telethon_client():
     client.connect = AsyncMock(return_value=None)
     client.disconnect = AsyncMock(return_value=None)
     client.is_user_authorized = AsyncMock(return_value=True)
-    client.send_message = AsyncMock(return_value=MagicMock(
-        id=1,
-        text="Test message",
-        date=None,
-    ))
+    client.send_message = AsyncMock(
+        return_value=MagicMock(
+            id=1,
+            text="Test message",
+            date=None,
+        )
+    )
     return client

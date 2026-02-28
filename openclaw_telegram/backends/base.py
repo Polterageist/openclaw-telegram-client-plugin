@@ -6,7 +6,7 @@ from typing import List, Dict, Any, Optional
 
 class BaseBackend(ABC):
     """Abstract base class for Telegram backends.
-    
+
     Implementations: telegram-cli, Telethon, etc.
     """
 
