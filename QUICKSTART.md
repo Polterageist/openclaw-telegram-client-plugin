@@ -1,8 +1,40 @@
-# Quick Start
+# Quick Start (5 minutes)
 
-Get up and running in 5 minutes.
+## 1. Install telegram-cli
 
-## 1. Install
+```bash
+# macOS
+brew install telegram-cli
+
+# Ubuntu/Debian
+sudo apt-get install telegram-cli
+
+# Verify
+tg -h
+```
+
+## 2. Initialize Telegram Session
+
+```bash
+# Run telegram-cli interactively (one-time setup)
+tg
+
+# You'll see:
+# > 
+
+# Type your phone number
+> +1234567890
+
+# You'll get a code via Telegram
+> 12345  # (example code)
+
+# You're in! Type 'quit' to exit
+> quit
+```
+
+This creates `~/.telegram-cli/` with your session (one-time).
+
+## 3. Install Plugin
 
 ```bash
 git clone https://github.com/yourusername/openclaw-telegram-client-plugin
@@ -10,24 +42,7 @@ cd openclaw-telegram-client-plugin
 poetry install
 ```
 
-## 2. Configure
-
-```bash
-cp .env.example .env
-# Edit .env with your API_ID, API_HASH, PHONE_NUMBER
-```
-
-Get credentials from https://my.telegram.org/app
-
-## 3. First Run
-
-```bash
-poetry run telegram-client auth
-```
-
-You'll be prompted for an SMS code.
-
-## 4. Send Your First Message
+## 4. First Test
 
 Create `test.py`:
 
@@ -39,36 +54,32 @@ async def main():
     client = TelegramClient()
     await client.connect()
     
-    # Send message
-    await client.send_message("@username", "Hello from Telegram client!")
+    # Get your chats
+    dialogs = await client.get_dialogs(limit=5)
+    for d in dialogs:
+        print(f"- {d['title']}")
     
     await client.disconnect()
 
 asyncio.run(main())
 ```
 
-Run it:
+Run:
 ```bash
 poetry run python test.py
 ```
 
-## 5. Read Messages
+You should see your chats listed!
+
+## 5. Send a Message
 
 ```python
 import asyncio
 from openclaw_telegram import TelegramClient
 
 async def main():
-    client = TelegramClient()
-    await client.connect()
-    
-    # Get recent messages from a chat
-    messages = await client.get_messages("@username", limit=10)
-    
-    for msg in messages:
-        print(f"{msg.sender}: {msg.text}")
-    
-    await client.disconnect()
+    async with TelegramClient() as client:
+        await client.send_message("@username", "Hello from Python!")
 
 asyncio.run(main())
 ```
@@ -76,37 +87,23 @@ asyncio.run(main())
 ## API Cheatsheet
 
 ```python
-# Connect
-await client.connect()
-
-# Get dialogs (chats)
-dialogs = await client.get_dialogs(limit=20)
-
-# Send message
-await client.send_message("@username", "text")
-
-# Get messages
-messages = await client.get_messages("@username", limit=100)
-
-# Disconnect
-await client.disconnect()
+async with TelegramClient() as client:
+    # List chats
+    dialogs = await client.get_dialogs(limit=20)
+    
+    # Get messages
+    msgs = await client.get_messages("@username", limit=50)
+    
+    # Send message
+    await client.send_message("@username", "text")
 ```
-
-## Troubleshooting
-
-**"Not authorized"**
-```bash
-rm session.session*
-poetry run telegram-client auth
-```
-
-**"API rate limit"**
-The client handles rate limiting automatically. If you hit limits, wait a few minutes.
-
-**"Connection timeout"**
-Check internet connection. Telegram servers might be slow.
 
 ## Next Steps
 
-- Read [API Reference](README.md#api-reference)
+- Read [README.md](README.md) for full API
+- Check [examples/](examples/) for more patterns
 - Run tests: `poetry run pytest`
+
+---
+
+**That's it! No APP_ID, no secrets in code.** 🔐

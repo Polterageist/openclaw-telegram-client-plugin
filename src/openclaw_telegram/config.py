@@ -1,4 +1,4 @@
-"""Configuration management."""
+"""Configuration management for telegram-cli."""
 
 import os
 from pathlib import Path
@@ -8,7 +8,10 @@ from dotenv import load_dotenv
 
 
 class Config:
-    """Configuration from environment."""
+    """Configuration for telegram-cli wrapper.
+    
+    Does NOT require APP_ID or APP_HASH (user manages via telegram-cli setup).
+    """
 
     def __init__(self, env_path: Optional[Path] = None):
         """Load configuration from .env or environment variables."""
@@ -18,19 +21,27 @@ class Config:
         if env_path.exists():
             load_dotenv(env_path)
 
-        self.api_id = int(os.getenv("API_ID", "0"))
-        self.api_hash = os.getenv("API_HASH", "")
+        # telegram-cli binary path
+        self.tg_cli_path = os.getenv("TG_CLI_PATH", "tg")
+        
+        # Session/config directory
+        self.tg_config_dir = Path(
+            os.getenv("TG_CONFIG_DIR", str(Path.home() / ".telegram-cli"))
+        )
+        
+        # Phone number (optional, for setup)
         self.phone_number = os.getenv("PHONE_NUMBER", "")
-        self.session_name = os.getenv("SESSION_NAME", "telegram_session")
+        
+        # Logging
         self.log_level = os.getenv("LOG_LEVEL", "INFO")
 
     def validate(self) -> bool:
         """Check if configuration is valid."""
-        return bool(self.api_id and self.api_hash and self.phone_number)
+        # Just need telegram-cli to be available
+        return True
 
     def __repr__(self) -> str:
         return (
-            f"Config(api_id={self.api_id}, "
-            f"phone={self.phone_number[:10]}..., "
-            f"session={self.session_name})"
+            f"Config(tg_cli={self.tg_cli_path}, "
+            f"config_dir={self.tg_config_dir})"
         )

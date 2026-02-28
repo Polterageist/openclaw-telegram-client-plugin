@@ -1,116 +1,63 @@
-"""Main Telegram client implementation."""
+"""Telegram user account client (via telegram-cli backend).
 
-import asyncio
+High-level interface for Telegram operations.
+"""
+
 import logging
-from typing import List, Optional
-
-from telethon import TelegramClient as TelethonClient
+from typing import List, Optional, Dict, Any
 
 from .config import Config
-from .exceptions import AuthenticationError, ConnectionError
+from .tg_cli import TelegramCLIClient
+from .exceptions import ConnectionError
 
 logger = logging.getLogger(__name__)
 
 
 class TelegramClient:
-    """Telegram user account client."""
+    """High-level Telegram user account client.
+    
+    Uses telegram-cli as backend (no APP_ID/APP_HASH needed).
+    User manages credentials locally via telegram-cli setup.
+    """
 
-    def __init__(self, config: Optional[Config] = None):
+    def __init__(self, config: Optional[Config] = None, backend: Optional[TelegramCLIClient] = None):
         """Initialize Telegram client.
         
         Args:
             config: Configuration object. If None, loads from .env
+            backend: Backend implementation. If None, uses TelegramCLIClient
         """
         self.config = config or Config()
-        
-        if not self.config.validate():
-            raise ValueError("Invalid configuration: missing API_ID, API_HASH, or PHONE_NUMBER")
-        
-        self._client: Optional[TelethonClient] = None
+        self._backend = backend or TelegramCLIClient(self.config)
         self._connected = False
 
     async def connect(self) -> bool:
         """Connect to Telegram.
         
         Returns:
-            True if connected, False otherwise
+            True if connected
             
         Raises:
             ConnectionError: If connection fails
         """
-        try:
-            self._client = TelethonClient(
-                self.config.session_name,
-                self.config.api_id,
-                self.config.api_hash,
-            )
-            
-            await self._client.connect()
-            self._connected = True
-            logger.info("Connected to Telegram")
-            return True
-        
-        except Exception as e:
-            logger.error(f"Connection failed: {e}")
-            raise ConnectionError(f"Failed to connect to Telegram: {e}")
+        result = await self._backend.connect()
+        self._connected = result
+        return result
 
     async def disconnect(self) -> None:
         """Disconnect from Telegram."""
-        if self._client and self._connected:
-            await self._client.disconnect()
-            self._connected = False
-            logger.info("Disconnected from Telegram")
+        await self._backend.disconnect()
+        self._connected = False
 
-    async def authenticate(self) -> bool:
-        """Authenticate with Telegram.
-        
-        Prompts user for SMS code if not already authenticated.
+    async def is_connected(self) -> bool:
+        """Check if client is connected.
         
         Returns:
-            True if authenticated, False otherwise
-            
-        Raises:
-            AuthenticationError: If authentication fails
+            True if connected
         """
-        try:
-            if not self._connected:
-                await self.connect()
-            
-            if await self._client.is_user_authorized():
-                logger.info("Already authorized")
-                return True
-            
-            # Request code
-            await self._client.send_code_request(self.config.phone_number)
-            
-            # Get code from user
-            code = input("Enter the code you received via SMS: ")
-            
-            # Sign in
-            await self._client.sign_in(self.config.phone_number, code)
-            
-            logger.info("Authentication successful")
-            return True
-        
-        except Exception as e:
-            logger.error(f"Authentication failed: {e}")
-            raise AuthenticationError(f"Authentication failed: {e}")
+        return self._connected
 
-    async def is_authorized(self) -> bool:
-        """Check if client is authorized.
-        
-        Returns:
-            True if authorized, False otherwise
-        """
-        if not self._client:
-            return False
-        
-        try:
-            return await self._client.is_user_authorized()
-        except Exception:
-            return False
-
-    async def get_dialogs(self, limit: int = 50) -> List[dict]:
+    async def get_dialogs(self, limit: int = 50) -> List[Dict[str, Any]]:
         """Get user dialogs (chats).
         
         Args:
@@ -118,85 +65,57 @@ class TelegramClient:
             
         Returns:
             List of dialog dictionaries
+            
+        Raises:
+            ConnectionError: If not connected
         """
-        if not self._client:
+        if not self._connected:
             raise ConnectionError("Not connected")
         
-        dialogs = []
-        async for dialog in self._client.iter_dialogs(limit=limit):
-            dialogs.append({
-                'id': dialog.id,
-                'title': dialog.title,
-                'unread': dialog.unread_count,
-                'pinned': dialog.pinned,
-                'is_group': dialog.is_group,
-                'is_channel': dialog.is_channel,
-            })
-        
-        return dialogs
+        return await self._backend.get_dialogs(limit)
 
     async def get_messages(
         self,
         peer: str,
         limit: int = 100,
         min_id: int = 0,
-    ) -> List[dict]:
+    ) -> List[Dict[str, Any]]:
         """Get messages from a chat.
         
         Args:
-            peer: Chat username, ID, or alias
+            peer: Chat name, ID, or username
             limit: Maximum number of messages
-            min_id: Minimum message ID to retrieve
+            min_id: Minimum message ID (for pagination)
             
         Returns:
             List of message dictionaries
+            
+        Raises:
+            ConnectionError: If not connected
         """
-        if not self._client:
+        if not self._connected:
             raise ConnectionError("Not connected")
         
-        messages = []
-        try:
-            entity = await self._client.get_entity(peer)
-            async for message in self._client.iter_messages(entity, limit=limit, min_id=min_id):
-                messages.append({
-                    'id': message.id,
-                    'text': message.text,
-                    'sender': getattr(message.sender, 'username', 'Unknown') if message.sender else 'Unknown',
-                    'date': message.date.isoformat() if message.date else None,
-                    'media': message.media is not None,
-                })
-        
-        except Exception as e:
-            logger.error(f"Failed to get messages from {peer}: {e}")
-            raise
-        
-        return messages
+        return await self._backend.get_messages(peer, limit)
 
-    async def send_message(self, peer: str, text: str) -> dict:
+    async def send_message(self, peer: str, text: str) -> Dict[str, Any]:
         """Send a message.
         
         Args:
-            peer: Chat username, ID, or alias
+            peer: Chat name, ID, or username
             text: Message text
             
         Returns:
             Message dictionary
+            
+        Raises:
+            ConnectionError: If not connected
+            MessageError: If sending fails
         """
-        if not self._client:
+        if not self._connected:
             raise ConnectionError("Not connected")
         
-        try:
-            message = await self._client.send_message(peer, text)
-            
-            return {
-                'id': message.id,
-                'text': message.text,
-                'date': message.date.isoformat() if message.date else None,
-            }
-        
-        except Exception as e:
-            logger.error(f"Failed to send message to {peer}: {e}")
-            raise
+        return await self._backend.send_message(peer, text)
 
     async def __aenter__(self):
         """Async context manager entry."""

@@ -10,53 +10,81 @@ from .config import Config
 
 @click.group()
 def main():
-    """Telegram client CLI."""
+    """Telegram client CLI (telegram-cli wrapper)."""
     pass
 
 
 @main.command()
 @click.option('--env', type=click.Path(), help='Path to .env file')
-def auth(env):
-    """Authenticate with Telegram."""
+def status(env):
+    """Check if telegram-cli is available and configured."""
     config = Config(Path(env) if env else None)
     
-    if not config.validate():
-        click.echo("❌ Missing configuration: API_ID, API_HASH, PHONE_NUMBER")
-        return
-    
-    async def do_auth():
-        client = TelegramClient(config)
-        await client.connect()
-        await client.authenticate()
-    
     try:
-        asyncio.run(do_auth())
-        click.echo("✅ Authenticated!")
+        async def check():
+            client = TelegramClient(config)
+            connected = await client.is_connected()
+            return connected
+        
+        # Try to check status
+        click.echo(f"✅ Configuration:")
+        click.echo(f"  tg_cli_path: {config.tg_cli_path}")
+        click.echo(f"  config_dir: {config.tg_config_dir}")
+        
+        if config.tg_config_dir.exists():
+            click.echo(f"  session: ✅ Found at {config.tg_config_dir}")
+        else:
+            click.echo(f"  session: ⚠️  Not found at {config.tg_config_dir}")
+            click.echo(f"         Run 'tg' to initialize")
+    
     except Exception as e:
-        click.echo(f"❌ Authentication failed: {e}")
+        click.echo(f"❌ Configuration error: {e}")
 
 
 @main.command()
-@click.option('--peer', prompt='Chat username/ID', help='Target chat')
-@click.option('--text', prompt='Message text', help='Message to send')
+@click.option('--peer', prompt='Recipient', help='Chat name/ID')
+@click.option('--text', prompt='Message', help='Message text')
 @click.option('--env', type=click.Path(), help='Path to .env file')
 def send(peer, text, env):
     """Send a message."""
     config = Config(Path(env) if env else None)
     
     async def do_send():
-        client = TelegramClient(config)
-        await client.connect()
-        await client.authenticate()
-        message = await client.send_message(peer, text)
-        await client.disconnect()
-        return message
+        async with TelegramClient(config) as client:
+            result = await client.send_message(peer, text)
+            return result
     
     try:
-        message = asyncio.run(do_send())
-        click.echo(f"✅ Message sent (ID: {message['id']})")
+        result = asyncio.run(do_send())
+        click.echo(f"✅ Message sent to {peer}")
     except Exception as e:
-        click.echo(f"❌ Failed to send message: {e}")
+        click.echo(f"❌ Failed to send: {e}")
+
+
+@main.command()
+@click.option('--limit', default=10, help='Number of dialogs to show')
+@click.option('--env', type=click.Path(), help='Path to .env file')
+def dialogs(limit, env):
+    """List your chats."""
+    config = Config(Path(env) if env else None)
+    
+    async def do_list():
+        async with TelegramClient(config) as client:
+            dialogs_list = await client.get_dialogs(limit=limit)
+            return dialogs_list
+    
+    try:
+        dialogs_list = asyncio.run(do_list())
+        
+        if not dialogs_list:
+            click.echo("No dialogs found")
+        else:
+            click.echo(f"📱 Your chats ({len(dialogs_list)}):\n")
+            for d in dialogs_list:
+                click.echo(f"  • {d.get('title', 'Unknown')}")
+    
+    except Exception as e:
+        click.echo(f"❌ Failed to list dialogs: {e}")
 
 
 @main.command()
@@ -64,6 +92,38 @@ def version():
     """Show version."""
     from . import __version__
     click.echo(f"telegram-client v{__version__}")
+
+
+@main.command()
+def setup():
+    """Show setup instructions."""
+    click.echo("""
+    📱 Telegram Client Setup Guide
+    ==============================
+    
+    1. Install telegram-cli:
+       brew install telegram-cli      # macOS
+       sudo apt-get install telegram-cli  # Ubuntu
+    
+    2. Initialize session (one-time):
+       tg
+       > +1234567890        # Your phone number
+       > 12345              # Code from Telegram
+       > quit
+    
+    3. Use the client:
+       telegram-client dialogs      # List chats
+       telegram-client send         # Send message
+       
+    4. Or use in Python:
+       from openclaw_telegram import TelegramClient
+       
+       async with TelegramClient() as client:
+           dialogs = await client.get_dialogs()
+    
+    All credentials stored locally in ~/.telegram-cli/
+    No APP_ID/APP_HASH needed!
+    """)
 
 
 if __name__ == '__main__':

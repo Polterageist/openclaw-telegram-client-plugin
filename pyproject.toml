@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "openclaw-telegram-client-plugin"
-version = "0.1.0"
-description = "OpenClaw Telegram client plugin for user account operations (not bot)"
+version = "0.2.0"
+description = "OpenClaw Telegram client plugin for user account operations (telegram-cli backend, no APP_ID needed)"
 authors = ["Aleksandr <polterageist@example.com>"]
 readme = "README.md"
 license = "MIT"
@@ -9,9 +9,7 @@ packages = [{include = "openclaw_telegram", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-telethon = "^1.30"
 python-dotenv = "^1.0"
-requests = "^2.30"
 click = "^8.0"
 
 [tool.poetry.group.dev.dependencies]

@@ -1,14 +1,21 @@
-"""OpenClaw Telegram Client Plugin.
+"""OpenClaw Telegram Client Plugin (telegram-cli wrapper).
 
-A user-account Telegram client for OpenClaw integration.
+No APP_ID/APP_HASH needed. User manages credentials locally via telegram-cli.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __author__ = "Aleksandr"
 
 from .client import TelegramClient
 from .config import Config
-from .exceptions import TelegramClientError, AuthenticationError, ConnectionError
+from .exceptions import (
+    TelegramClientError,
+    AuthenticationError,
+    ConnectionError,
+    MessageError,
+    RateLimitError,
+    NotFoundError,
+)
 
 __all__ = [
     "TelegramClient",
@@ -16,4 +23,7 @@ __all__ = [
     "TelegramClientError",
     "AuthenticationError",
     "ConnectionError",
+    "MessageError",
+    "RateLimitError",
+    "NotFoundError",
 ]

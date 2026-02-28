@@ -11,41 +11,36 @@ from openclaw_telegram.config import Config
 def test_config_from_env():
     """Test loading config from environment."""
     with patch.dict(os.environ, {
-        'API_ID': '123456',
-        'API_HASH': 'test_hash',
+        'TG_CLI_PATH': '/usr/bin/tg',
         'PHONE_NUMBER': '+1234567890',
     }):
         config = Config()
         
-        assert config.api_id == 123456
-        assert config.api_hash == 'test_hash'
+        assert config.tg_cli_path == '/usr/bin/tg'
         assert config.phone_number == '+1234567890'
-
-
-def test_config_validation():
-    """Test config validation."""
-    config = Config.__new__(Config)
-    config.api_id = 0
-    config.api_hash = ''
-    config.phone_number = ''
-    
-    assert not config.validate()
-    
-    config.api_id = 123456
-    config.api_hash = 'hash'
-    config.phone_number = '+1234567890'
-    
-    assert config.validate()
 
 
 def test_config_defaults():
     """Test config default values."""
-    config = Config.__new__(Config)
-    config.api_id = 0
-    config.api_hash = ''
-    config.phone_number = ''
-    config.session_name = os.getenv('SESSION_NAME', 'telegram_session')
-    config.log_level = os.getenv('LOG_LEVEL', 'INFO')
+    config = Config()
     
-    assert config.session_name == 'telegram_session'
+    assert config.tg_cli_path == 'tg'  # Default to PATH
     assert config.log_level == 'INFO'
+    assert isinstance(config.tg_config_dir, Path)
+
+
+def test_config_validation():
+    """Test config validation."""
+    config = Config()
+    
+    # Should always validate (no APP_ID needed)
+    assert config.validate() is True
+
+
+def test_config_repr():
+    """Test config string representation."""
+    config = Config()
+    
+    repr_str = repr(config)
+    assert 'tg_cli' in repr_str
+    assert 'config_dir' in repr_str
