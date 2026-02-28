@@ -89,6 +89,39 @@ def dialogs(limit, env):
 
 
 @main.command()
+@click.option("--env", type=click.Path(), help="Path to .env file")
+@click.option("--qr", is_flag=True, help="Use QR code instead of phone code")
+def login(env, qr):
+    """Authenticate with Telegram."""
+    config = Config(Path(env) if env else None)
+
+    async def do_login():
+        async with TelegramClient(config) as client:
+            if qr:
+                # Use QR code
+                try:
+                    import qrcode
+                    success = await client.authorize_qr()
+                    return success
+                except ImportError:
+                    click.echo("❌ Error: 'qrcode' package not found. Install with: pip install qrcode")
+                    return False
+            else:
+                # Use phone code
+                success = await client.authorize_code()
+                return success
+
+    try:
+        success = asyncio.run(do_login())
+        if success:
+            click.echo("✅ Login successful!")
+        else:
+            click.echo("❌ Login failed.")
+    except Exception as e:
+        click.echo(f"❌ Error during login: {e}")
+
+
+@main.command()
 def version():
     """Show version."""
     from . import __version__
