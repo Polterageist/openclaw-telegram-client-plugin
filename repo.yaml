@@ -1,0 +1,28 @@
+# OpenClaw Telegram Client Plugin - Repository Specification
+name: openclaw-telegram-client-plugin
+short_name: tg-client
+version: 0.1.0
+description: Telegram user account client for OpenClaw integration
+visibility: public
+
+dependencies:
+  python: "^3.9"
+  telethon: "^1.30"
+  python-dotenv: "^1.0"
+  click: "^8.0"
+
+external: {}
+
+scripts:
+  test: "pytest tests/"
+  lint: "black src/ tests/ && pylint src/"
+  typecheck: "mypy src/"
+  format: "black src/ tests/ && isort src/ tests/"
+
+features:
+  - user_account_operations
+  - message_read_write
+  - group_management
+  - media_handling
+  - rate_limiting
+  - error_recovery

@@ -1,0 +1,49 @@
+[tool.poetry]
+name = "openclaw-telegram-client-plugin"
+version = "0.1.0"
+description = "OpenClaw Telegram client plugin for user account operations (not bot)"
+authors = ["Aleksandr <polterageist@example.com>"]
+readme = "README.md"
+license = "MIT"
+packages = [{include = "openclaw_telegram", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+telethon = "^1.30"
+python-dotenv = "^1.0"
+requests = "^2.30"
+click = "^8.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4"
+pytest-asyncio = "^0.21"
+pytest-cov = "^4.1"
+black = "^23.0"
+pylint = "^3.0"
+mypy = "^1.5"
+isort = "^5.12"
+
+[tool.poetry.scripts]
+telegram-client = "openclaw_telegram.cli:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 100
+target-version = ["py39", "py310", "py311"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
