@@ -102,8 +102,22 @@ class TelethonBackend(BaseBackend):
             logger.info("Starting QR code authorization...")
             qr_login = await self._client.qr_login()
 
-            logger.info(f"QR Code URL: {qr_login.url}")
-            logger.info("Scan with your Telegram app or open the URL above")
+            # Display QR code in terminal
+            try:
+                import qrcode
+                qr = qrcode.QRCode()
+                qr.add_data(qr_login.url)
+                qr.make(fit=True)
+                # Print to stdout directly since it's interactive
+                print("\n" + "="*30)
+                print("SCAN THIS QR CODE IN TELEGRAM:")
+                print("="*30 + "\n")
+                qr.print_ascii(invert=True)
+                print(f"\nURL: {qr_login.url}\n")
+            except ImportError:
+                logger.warning("qrcode library not found. Please scan the URL manually.")
+                print(f"\nURL to scan: {qr_login.url}\n")
+
             logger.info(f"Waiting for authorization (timeout: {timeout}s)...")
 
             user = await qr_login.wait(timeout=timeout)

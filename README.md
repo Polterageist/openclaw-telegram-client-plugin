@@ -28,32 +28,33 @@ Python wrapper around **telegram-cli** for user account operations. **No APP_ID/
 
 ## Installation
 
+### 1. As a Python package (pip)
 ```bash
-git clone https://github.com/yourusername/openclaw-telegram-client-plugin
-cd openclaw-telegram-client-plugin
-poetry install
+pip install openclaw-telegram-client-plugin
 ```
 
-## Quick Start
-
-### 1. Verify telegram-cli Works
-
+### 2. As an OpenClaw Skill (ClawHub)
 ```bash
-tg -h  # Should show usage
+openclaw skill install telegram-client
 ```
 
-### 2. Initialize Telegram Session
+## Setup
 
-First time setup:
-
+### Step 1: Authentication
+If using **Telethon backend** (default), run the interactive login:
 ```bash
-tg  # Start tg interactively
-# Follow prompts to authenticate
-# (phone number → code from Telegram)
-# Type 'quit' to exit
+telegram-client login
 ```
+Follow the prompts to enter your phone number and confirm with the code received.
 
-This creates `~/.telegram-cli/` with your session.
+### Step 2: Configuration
+Create a `.env` file or export environment variables:
+```env
+BACKEND=telethon
+TELETHON_API_ID=your_id
+TELETHON_API_HASH=your_hash
+PHONE_NUMBER=+your_phone
+```
 
 ### 3. Use via Python
 
